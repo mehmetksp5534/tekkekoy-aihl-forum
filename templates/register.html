@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayıt Ol - Tekkeköy Anadolu İmam Hatip Lisesi Forum</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #6E81FF 0%, #DFF7F7 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            box-shadow: none;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            margin: 0;
+            text-align: center;
+            color: white;
+        }
+
+        header nav {
+            justify-content: center;
+            gap: 30px;
+        }
+
+        header nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        header nav a:hover {
+            text-decoration: underline;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .auth-container h2 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input[type="email"],
+        .form-group input[type="password"],
+        .form-group input[type="text"],
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #6E81FF 0%, #DFF7F7 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-group input[type="submit"]:active {
+            transform: translateY(0);
+        }
+
+        .auth-links {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .auth-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+
+        .teacher-info {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #555;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .teacher-info strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <button class="menu-toggle" id="menuToggle" aria-label="Menüyü Aç/Kapat">☰</button>
+        <h1>Tekkeköy Anadolu İmam Hatip Lisesi Forum</h1>
+        <nav>
+            <a href="/">Ana Sayfa</a>
+            <a href="/login">Giriş Yap</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="auth-container">
+            <h2>📝 Kayıt Ol</h2>
+            <form method="POST">
+                <div class="form-group">
+                    <label for="name">Ad Soyad</label>
+                    <input type="text" id="name" name="name" placeholder="Adınız ve soyadınız" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Adresi</label>
+                    <input type="email" id="email" name="email" placeholder="example@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Şifre</label>
+                    <input type="password" id="password" name="password" placeholder="••••••••" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Rol</label>
+                    <select id="role" name="role" onchange="toggleTeacherCode()" required>
+                        <option value="student">👨‍🎓 Öğrenci</option>
+                        <option value="teacher">👨‍🏫 Öğretmen</option>
+                    </select>
+                </div>
+
+                <div id="teacherCodeDiv" class="teacher-info">
+                    <strong>⚠️ Öğretmen Onay Kodu Gerekli</strong><br>
+                    Öğretmen olarak kayıt olmak için lütfen okuldan aldığınız onay kodunu girin.
+                </div>
+
+                <div id="teacherCodeInput" style="display: none; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label for="teacher_code">Öğretmen Onay Kodu</label>
+                        <input type="text" id="teacher_code" name="teacher_code" placeholder="Kodunuzu girin">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <input type="submit" value="Kayıt Ol">
+                </div>
+            </form>
+
+            <div class="auth-links">
+                Hesabın var mı? <a href="/login">Giriş yap</a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Hamburger Menü Toggle
+        function initMobileMenu() {
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.querySelector('.sidebar');
+            
+            if (!menuToggle) return;
+            
+            menuToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (sidebar) sidebar.classList.toggle('open');
+                document.body.classList.toggle('menu-open');
+            });
+            
+            // Overlay'e tıklandığında menüyü kapat
+            document.addEventListener('click', function(e) {
+                const sidebarOpen = sidebar && sidebar.classList.contains('open');
+                if (sidebarOpen && 
+                    (!sidebar || !sidebar.contains(e.target)) && 
+                    e.target !== menuToggle) {
+                    if (sidebar) sidebar.classList.remove('open');
+                    document.body.classList.remove('menu-open');
+                }
+            });
+            
+            // Sidebar panellerine tıklandığında menüyü kapat
+            if (sidebar) {
+                sidebar.querySelectorAll('a, li').forEach(element => {
+                    element.addEventListener('click', function() {
+                        nav.classList.remove('open');
+                        sidebar.classList.remove('open');
+                        document.body.classList.remove('menu-open');
+                    });
+                });
+            }
+        }
+
+        function toggleTeacherCode() {
+            var role = document.getElementById("role").value;
+            var infoDiv = document.getElementById("teacherCodeDiv");
+            var inputDiv = document.getElementById("teacherCodeInput");
+            if (role === "teacher") {
+                infoDiv.style.display = "block";
+                inputDiv.style.display = "block";
+                document.getElementById("teacher_code").focus();
+            } else {
+                infoDiv.style.display = "none";
+                inputDiv.style.display = "none";
+                document.getElementById("teacher_code").value = "";
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initMobileMenu();
+        });
+    </script>
+</body>
+</html>

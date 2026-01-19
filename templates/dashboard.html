@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Tekkeköy Anadolu İmam Hatip Lisesi Forum</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #6E81FF 0%, #DFF7F7 100%) !important;
+            min-height: 100vh;
+        }
+
+        .profile-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .profile-photo {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #333;
+            display: block;
+            margin: 0 auto 15px;
+            background: #f0f0f0;
+        }
+
+        .profile-info {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #333;
+            border-radius: 4px;
+        }
+
+        .profile-info p {
+            margin: 8px 0;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #333;
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .edit-form {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="file"],
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: Arial, sans-serif;
+            box-sizing: border-box;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group input[type="file"] {
+            padding: 5px;
+        }
+
+        .form-group button {
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .form-group button:hover {
+            background: #555;
+        }
+
+        .role-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f4f8;
+            border-radius: 4px;
+            border-left: 4px solid #0066cc;
+        }
+
+        .role-info p {
+            margin: 5px 0;
+        }
+
+        /* --- Profil Özelleştirme Stilleri --- */
+        .customization-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 2px solid #6E81FF;
+        }
+
+        .customization-section h3 {
+            color: #6E81FF;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #6E81FF;
+            padding-bottom: 10px;
+        }
+
+        .xp-display {
+            background: linear-gradient(135deg, #6E81FF 0%, #a0a8ff 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .xp-display strong {
+            display: block;
+            font-size: 24px;
+            margin: 10px 0 5px;
+        }
+
+        .customization-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .item-card {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            position: relative;
+        }
+
+        .item-card:hover {
+            border-color: #6E81FF;
+            box-shadow: 0 4px 8px rgba(110, 129, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .item-card.selected {
+            border-color: #6E81FF;
+            background: #f0f4ff;
+            box-shadow: 0 0 10px rgba(110, 129, 255, 0.4);
+        }
+
+        .item-card.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .item-card.locked::after {
+            content: "🔒";
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 16px;
+        }
+
+        .item-image {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin: 0 auto 8px;
+            display: block;
+        }
+
+        .item-name {
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .item-xp {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .unlocked-info {
+            font-size: 12px;
+            color: #6E81FF;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .customization-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            padding: 10px 15px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            background: #6E81FF;
+            color: white;
+        }
+
+        .tab-button:hover {
+            background: #6E81FF;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .preview-card {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .preview-title {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .preview-image {
+            max-width: 200px;
+            max-height: 200px;
+            margin: 0 auto 10px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <button class="menu-toggle" id="menuToggle" aria-label="Menüyü Aç/Kapat">☰</button>
+        <h1>Tekkeköy Anadolu İmam Hatip Lisesi Forum</h1>
+        <nav>
+            <div class="user-info">
+                {% if user_profile_photo %}
+                    <img src="{{ url_for('uploaded_file', filename=user_profile_photo) }}" alt="Avatar" class="avatar" title="{{ user_name }}">
+                {% else %}
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='30' r='20' fill='%23fff'/%3E%3Cpath d='M10 100 Q10 70 50 70 Q90 70 90 100' fill='%23fff'/%3E%3C/svg%3E" alt="Avatar" class="avatar" title="{{ user_name }}">
+                {% endif %}
+                <span>{{ user_name }}</span>
+            </div>
+            <a href="/">Ana Sayfa</a>
+            <a href="/logout">Çıkış Yap</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="profile-container">
+            <!-- Profil Başlığı -->
+            <div class="profile-header">
+                {% if user_profile_photo %}
+                    <img src="{{ url_for('uploaded_file', filename=user_profile_photo) }}" alt="Profil Fotoğrafı" class="profile-photo">
+                {% else %}
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='30' r='20' fill='%23999'/%3E%3Cpath d='M10 100 Q10 70 50 70 Q90 70 90 100' fill='%23999'/%3E%3C/svg%3E" alt="Profil Fotoğrafı" class="profile-photo">
+                {% endif %}
+                <h2>{{ user_name }}</h2>
+                <span class="role-badge">
+                    {% if user_role == 'admin' %}
+                        📌 Admin
+                    {% elif user_role == 'teacher' %}
+                        👨‍🏫 Öğretmen
+                    {% else %}
+                        👨‍🎓 Öğrenci
+                    {% endif %}
+                </span>
+            </div>
+
+            <!-- Profil Bilgileri -->
+            <div class="profile-info">
+                <strong>📧 Email:</strong> {{ user_email }}
+                {% if user_bio %}
+                    <p><strong>📝 Biyografi:</strong></p>
+                    <p>{{ user_bio }}</p>
+                {% else %}
+                    <p><em style="color: #999;">Henüz biyografi eklenmemiş</em></p>
+                {% endif %}
+            </div>
+
+            <!-- Rol Bilgisi -->
+            <div class="role-info">
+                <strong>Rolünüz Hakkında:</strong>
+                {% if user_role == 'student' %}
+                    <p>Öğrenci olarak forum konularını görebilir, sorular sorabilir ve cevapları okuyabilirsiniz.</p>
+                {% elif user_role == 'teacher' %}
+                    <p>Öğretmen olarak soruları cevaplayabilir, öğrencilere rehberlik edebilirsiniz.</p>
+                {% elif user_role == 'admin' %}
+                    <p>Admin olarak tüm konuları silebilir, forumu yönetebilirsiniz.</p>
+                    <p style="margin-top: 10px; text-align: center;">
+                        <a href="{{ url_for('admin_panel') }}" style="background: #ff6600; color: white; padding: 8px 15px; border-radius: 4px; text-decoration: none; display: inline-block; font-weight: bold;">📋 Admin Paneline Git</a>
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- Profil Düzenleme Formu -->
+            <div class="edit-form">
+                <h3>Profili Düzenle</h3>
+                <form method="POST" action="{{ url_for('edit_profile') }}" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="name">Ad Soyad:</label>
+                        <input type="text" id="name" name="name" value="{{ user_name }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bio">Biyografi:</label>
+                        <textarea id="bio" name="bio" placeholder="Kendiniz hakkında birkaç söz yazın...">{{ user_bio or '' }}</textarea>
+                        <small style="color: #666;">Maksimum 500 karakter</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profile_photo">Profil Fotoğrafı:</label>
+                        <input type="file" id="profile_photo" name="profile_photo" accept=".png,.jpg,.jpeg,.gif">
+                        <small style="color: #666;">PNG, JPG, JPEG, GIF formatları kabul edilir (Maksimum 5MB)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit">Profili Kaydet</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Profil Özelleştirme Bölümü -->
+            <div class="customization-section">
+                <h3>✨ Profil Özelleştirmesi</h3>
+                
+                <!-- XP Göstergesi -->
+                <div class="xp-display">
+                    <span>Toplam XP</span>
+                    <strong id="xp-value">0</strong>
+                    <span style="font-size: 12px;">Konu ve cevaplarınızdan kazandığınız XP</span>
+                </div>
+
+                <!-- Sekmeler -->
+                <div class="customization-tabs">
+                    <button class="tab-button active" onclick="showTab('frames')">🖼️ Çerçeveler</button>
+                    <button class="tab-button" onclick="showTab('badges')">🏆 Rozetler</button>
+                    <button class="tab-button" onclick="showTab('colors')">🎨 Arka Plan Renkleri</button>
+                </div>
+
+                <!-- Çerçeveler Sekmesi -->
+                <div id="frames" class="tab-content active">
+                    <div class="preview-card">
+                        <div class="preview-title">Profil Önizlemesi</div>
+                        <div id="frame-preview" style="text-align: center; padding: 20px;">
+                            {% if user_profile_photo %}
+                                <img id="preview-photo" src="{{ url_for('uploaded_file', filename=user_profile_photo) }}" 
+                                     alt="Profil" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 6px solid #333;">
+                            {% else %}
+                                <img id="preview-photo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='30' r='20' fill='%23999'/%3E%3Cpath d='M10 100 Q10 70 50 70 Q90 70 90 100' fill='%23999'/%3E%3C/svg%3E" 
+                                     alt="Profil" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 6px solid #333;">
+                            {% endif %}
+                            <div style="margin-top: 10px; font-size: 14px; color: #333;">
+                                <strong id="preview-frame-name">Çerçeve Seç</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="customization-grid" id="frames-grid">
+                        <!-- JavaScript tarafından doldurulacak -->
+                    </div>
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button id="save-customization-btn" onclick="saveAllCustomizations()" style="background: #4CAF50; color: white; padding: 10px 30px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                            💾 Kaydet
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Rozetler Sekmesi -->
+                <div id="badges" class="tab-content">
+                    <div class="preview-card">
+                        <div class="preview-title">Profil Kartı Önizlemesi</div>
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="display: inline-block; background: white; border: 2px solid #ddd; border-radius: 8px; padding: 15px;">
+                                {% if user_profile_photo %}
+                                    <img id="badge-preview-photo" src="{{ url_for('uploaded_file', filename=user_profile_photo) }}" 
+                                         style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 6px solid #333; display: block; margin: 0 auto 10px;">
+                                {% else %}
+                                    <img id="badge-preview-photo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='30' r='20' fill='%23999'/%3E%3Cpath d='M10 100 Q10 70 50 70 Q90 70 90 100' fill='%23999'/%3E%3C/svg%3E" 
+                                         style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 6px solid #333; display: block; margin: 0 auto 10px;">
+                                {% endif %}
+                                <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">{{ user_name }}</div>
+                                <div id="badge-preview-area" style="font-size: 24px; height: 30px; margin-bottom: 10px;">-</div>
+                                <div style="font-size: 12px; color: #666;">Rozet Seç</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="customization-grid" id="badges-grid">
+                        <!-- JavaScript tarafından doldurulacak -->
+                    </div>
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button id="save-customization-btn2" onclick="saveAllCustomizations()" style="background: #4CAF50; color: white; padding: 10px 30px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                            💾 Kaydet
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Arka Plan Renkleri Sekmesi -->
+                <div id="colors" class="tab-content">
+                    <div class="preview-card">
+                        <div class="preview-title">Arka Plan Önizlemesi</div>
+                        <div id="color-preview" style="width: 100%; height: 150px; border-radius: 8px; background: linear-gradient(135deg, #6E81FF 0%, #DFF7F7 100%); border: 2px solid #ddd; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">
+                            Varsayılan
+                        </div>
+                    </div>
+                    <div class="customization-grid" id="colors-grid">
+                        <!-- JavaScript tarafından doldurulacak -->
+                    </div>
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button id="save-customization-btn3" onclick="saveAllCustomizations()" style="background: #4CAF50; color: white; padding: 10px 30px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                            💾 Kaydet
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Hamburger Menü Toggle
+        function initMobileMenu() {
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.querySelector('.sidebar');
+            
+            if (!menuToggle) return;
+            
+            menuToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (sidebar) sidebar.classList.toggle('open');
+                document.body.classList.toggle('menu-open');
+            });
+            
+            // Overlay'e tıklandığında menüyü kapat
+            document.addEventListener('click', function(e) {
+                const sidebarOpen = sidebar && sidebar.classList.contains('open');
+                if (sidebarOpen && 
+                    (!sidebar || !sidebar.contains(e.target)) && 
+                    e.target !== menuToggle) {
+                    if (sidebar) sidebar.classList.remove('open');
+                    document.body.classList.remove('menu-open');
+                }
+            });
+            
+            // Sidebar panellerine tıklandığında menüyü kapat
+            if (sidebar) {
+                sidebar.querySelectorAll('a, li').forEach(element => {
+                    element.addEventListener('click', function() {
+                        nav.classList.remove('open');
+                        sidebar.classList.remove('open');
+                        document.body.classList.remove('menu-open');
+                    });
+                });
+            }
+        }
+
+        // Seçimlerin pending state'ini tutacak obje
+        const pendingCustomizations = {
+            frame_id: null,
+            badge_id: null,
+            bg_color_id: null,
+            frameData: null,
+            badgeData: null,
+            colorData: null
+        };
+        
+        // DOMContentLoaded'da menüyü initialize et
+        document.addEventListener('DOMContentLoaded', function() {
+            initMobileMenu();
+        });
+        
+        // Sekmeler arası geçiş
+        function showTab(tabName) {
+            // Tüm sekmeleri gizle
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Seçili sekmeyi göster
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Çerçeveleri yükle
+        function loadFrames() {
+            fetch('/api/profile/frames')
+                .then(response => response.json())
+                .then(frames => {
+                    const grid = document.getElementById('frames-grid');
+                    grid.innerHTML = '';
+                    
+                    if (!frames || frames.length === 0) {
+                        grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999;">Henüz çerçeve açılmamış</p>';
+                        return;
+                    }
+
+                    // Duplikatleri düzeltmek için Set kullan
+                    const seenIds = new Set();
+                    frames.forEach(frame => {
+                        if (seenIds.has(frame.id)) return; // Duplikat, atla
+                        seenIds.add(frame.id);
+                        
+                        const card = document.createElement('div');
+                        card.className = 'item-card';
+                        card.setAttribute('data-frame-id', frame.id);
+                        card.innerHTML = `
+                            <div style="width: 80px; height: 80px; border: 3px solid ${frame.color || '#333'}; border-radius: 8px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; background: #f9f9f9;">
+                                <span style="color: ${frame.color || '#333'}; font-weight: bold; font-size: 24px;">🖼️</span>
+                            </div>
+                            <div class="item-name">${frame.name}</div>
+                            <div class="item-xp">XP: ${frame.xp_required}</div>
+                        `;
+                        card.onclick = () => selectFrame(frame.id, frame, card);
+                        grid.appendChild(card);
+                    });
+                })
+                .catch(error => console.error('Frames loading error:', error));
+        }
+
+        // Rozetleri yükle
+        function loadBadges() {
+            fetch('/api/profile/badges')
+                .then(response => response.json())
+                .then(badges => {
+                    const grid = document.getElementById('badges-grid');
+                    grid.innerHTML = '';
+                    
+                    if (!badges || badges.length === 0) {
+                        grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999;">Henüz rozet açılmamış</p>';
+                        return;
+                    }
+
+                    // Duplikatleri düzeltmek için Set kullan
+                    const seenIds = new Set();
+                    badges.forEach(badge => {
+                        if (seenIds.has(badge.id)) return; // Duplikat, atla
+                        seenIds.add(badge.id);
+                        
+                        const card = document.createElement('div');
+                        card.className = 'item-card';
+                        card.setAttribute('data-badge-id', badge.id);
+                        card.title = badge.description;
+                        card.innerHTML = `
+                            <img src="${badge.icon}" alt="${badge.name}" class="item-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2240%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3E🏆%3C/text%3E%3C/svg%3E'">
+                            <div class="item-name">${badge.name}</div>
+                            <div class="item-xp">XP: ${badge.xp_required}</div>
+                        `;
+                        card.onclick = () => selectBadge(badge.id, badge, card);
+                        grid.appendChild(card);
+                    });
+                })
+                .catch(error => console.error('Badges loading error:', error));
+        }
+
+        // Arka plan renklerini yükle
+        function loadBgColors() {
+            fetch('/api/profile/bg-colors')
+                .then(response => response.json())
+                .then(colors => {
+                    const grid = document.getElementById('colors-grid');
+                    grid.innerHTML = '';
+                    
+                    if (!colors || colors.length === 0) {
+                        grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999;">Henüz renk açılmamış</p>';
+                        return;
+                    }
+
+                    // Duplikatleri düzeltmek için Set kullan
+                    const seenIds = new Set();
+                    
+                    // Varsayılan (Default) seçeneğini ekle
+                    const defaultCard = document.createElement('div');
+                    defaultCard.className = 'item-card';
+                    defaultCard.setAttribute('data-color-id', 'default');
+                    defaultCard.style.background = 'linear-gradient(135deg, #6E81FF 0%, #DFF7F7 100%)';
+                    defaultCard.style.border = '2px solid #ddd';
+                    defaultCard.innerHTML = `
+                        <div class="item-name" style="color: white; font-weight: bold;">Varsayılan</div>
+                        <div class="item-xp" style="color: white;">Default Gradient</div>
+                    `;
+                    defaultCard.onclick = () => selectBgColor('default', {id: 'default', name: 'Varsayılan', gradient_code: 'linear-gradient(135deg, #6E81FF 0%, #DFF7F7 100%)', color_code: '#6E81FF'}, defaultCard);
+                    grid.appendChild(defaultCard);
+                    
+                    colors.forEach(color => {
+                        if (seenIds.has(color.id)) return; // Duplikat, atla
+                        seenIds.add(color.id);
+                        
+                        const card = document.createElement('div');
+                        card.className = 'item-card';
+                        card.setAttribute('data-color-id', color.id);
+                        
+                        // Gradient varsa kullan, yoksa solid color
+                        const bgStyle = color.gradient_code ? color.gradient_code : color.color_code;
+                        card.style.background = bgStyle;
+                        card.style.border = '2px solid #ddd';
+                        
+                        const textColor = bgStyle.includes('#FFF') || bgStyle.includes('#fff') ? '#333' : 'white';
+                        card.innerHTML = `
+                            <div class="item-name" style="color: ${textColor};">${color.name}</div>
+                            <div class="item-xp" style="color: ${textColor};">XP: ${color.required_xp}</div>
+                        `;
+                        card.onclick = () => selectBgColor(color.id, color, card);
+                        grid.appendChild(card);
+                    });
+                })
+                .catch(error => console.error('Colors loading error:', error));
+        }
+
+        // XP yükle ve rozetleri açarken kontrol et
+        function loadUserXP() {
+            const userId = '{{ session.get("user_id") }}';
+            if (!userId || userId === 'None') {
+                console.error('User ID bulunamadı');
+                return;
+            }
+            
+            fetch(`/api/profile/${userId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('API hatası: ' + response.status);
+                    return response.json();
+                })
+                .then(user => {
+                    const xpElement = document.getElementById('xp-value');
+                    if (xpElement) {
+                        xpElement.textContent = user.xp || 0;
+                    }
+                })
+                .catch(error => console.error('XP yükleme hatası:', error));
+        }
+
+        // Çerçeve seç (pending state'e kaydet, hemen kaydetme)
+        function selectFrame(frameId, frameData, element) {
+            // Pending selection'ı kaydet
+            pendingCustomizations.frame_id = frameId;
+            pendingCustomizations.frameData = frameData;
+            
+            // Visual feedback
+            document.querySelectorAll('#frames-grid .item-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            
+            // Preview'da göster (hemen database'e kaydet değil)
+            document.getElementById('preview-frame-name').textContent = frameData.name;
+            const photoElement = document.getElementById('preview-photo');
+            const badgePhotoElement = document.getElementById('badge-preview-photo');
+            if (photoElement && frameData.color) {
+                photoElement.style.borderColor = frameData.color;
+            }
+            if (badgePhotoElement && frameData.color) {
+                badgePhotoElement.style.borderColor = frameData.color;
+            }
+            
+            console.log('Frame pending:', frameData.name);
+        }
+
+        // Rozet seç (pending state'e kaydet, hemen kaydetme)
+        function selectBadge(badgeId, badgeData, element) {
+            // Pending selection'ı kaydet
+            pendingCustomizations.badge_id = badgeId;
+            pendingCustomizations.badgeData = badgeData;
+            
+            // Visual feedback
+            document.querySelectorAll('#badges-grid .item-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            
+            // Preview'da göster (hemen database'e kaydet değil)
+            const badgePreview = document.getElementById('badge-preview-area');
+            if (badgePreview && badgeData.icon) {
+                badgePreview.innerHTML = `<img src="${badgeData.icon}" style="height: 28px; vertical-align: middle;" alt="${badgeData.name}">`;
+            }
+            
+            console.log('Badge pending:', badgeData.name);
+        }
+
+        // Arka plan rengi seç (pending state'e kaydet, hemen kaydetme)
+        function selectBgColor(colorId, colorData, element) {
+            // Pending selection'ı kaydet
+            pendingCustomizations.bg_color_id = colorId;
+            pendingCustomizations.colorData = colorData;
+            
+            // Visual feedback
+            document.querySelectorAll('#colors-grid .item-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            
+            // Preview'da göster (hemen database'e kaydet değil)
+            const preview = document.getElementById('color-preview');
+            const bgStyle = colorData.gradient_code ? colorData.gradient_code : colorData.color_code;
+            preview.style.background = bgStyle;
+            preview.textContent = colorData.name;
+            
+            console.log('Color pending:', colorData.name);
+        }
+        
+        // Tüm seçimleri kaydet (Kaydet butonu click'lendiğinde)
+        function saveAllCustomizations() {
+            const customizations = {};
+            
+            // Pending seçimleri hazırla
+            if (pendingCustomizations.frame_id) {
+                customizations.frame_id = pendingCustomizations.frame_id;
+            }
+            if (pendingCustomizations.badge_id) {
+                customizations.badge_id = pendingCustomizations.badge_id;
+            }
+            if (pendingCustomizations.bg_color_id) {
+                customizations.bg_color_id = pendingCustomizations.bg_color_id;
+            }
+            
+            // Eğer hiçbir seçim yoksa uyar
+            if (Object.keys(customizations).length === 0) {
+                alert('Lütfen en az bir özelleştirme seçin');
+                return;
+            }
+            
+            // API'ye gönder
+            fetch('/api/profile/customize', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(customizations)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success || result.message) {
+                    alert('✅ Profil özelleştirmeleri kaydedildi!');
+                    // Pending state'i temizle
+                    pendingCustomizations.frame_id = null;
+                    pendingCustomizations.badge_id = null;
+                    pendingCustomizations.bg_color_id = null;
+                    pendingCustomizations.frameData = null;
+                    pendingCustomizations.badgeData = null;
+                    pendingCustomizations.colorData = null;
+                } else {
+                    alert('❌ Kaydetme sırasında hata oluştu');
+                }
+            })
+            .catch(error => {
+                console.error('Save error:', error);
+                alert('❌ Kaydetme sırasında hata oluştu');
+            });
+        }
+
+        // Sayfa yükleme
+        window.addEventListener('load', () => {
+            loadUserXP();
+            loadFrames();
+            loadBadges();
+            loadBgColors();
+        });
+    </script>

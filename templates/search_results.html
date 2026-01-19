@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arama Sonuçları - Tekkeköy Anadolu İmam Hatip Lisesi Forum</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #6E81FF 0%, #DFF7F7 100%) !important;
+            min-height: 100vh;
+        }
+
+        .search-results-container {
+            max-width: 900px;
+            margin: 80px auto 20px;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        .search-header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .search-header h1 {
+            margin: 0 0 15px 0;
+            color: #333;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .search-info {
+            text-align: center;
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .search-query {
+            color: #6E81FF;
+            font-weight: bold;
+        }
+
+        .back-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #6E81FF 0%, #DFF7F7 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(110, 129, 255, 0.4);
+        }
+
+        .results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #6E81FF;
+            transition: all 0.3s;
+        }
+
+        .result-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .result-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            color: #0066cc;
+        }
+
+        .result-title a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        .result-title a:hover {
+            text-decoration: underline;
+        }
+
+        .result-meta {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .result-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .result-category {
+            display: inline-block;
+            background: #6E81FF;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .result-content {
+            color: #333;
+            line-height: 1.6;
+            max-height: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 10px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .no-results h2 {
+            margin: 0 0 10px 0;
+        }
+
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px 20px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <button class="menu-toggle" id="menuToggle" aria-label="Menüyü Aç/Kapat">☰</button>
+    <h1>Tekkeköy Anadolu İmam Hatip Lisesi Forum</h1>
+    <nav>
+        <div class="user-info">
+            {% if user_profile_photo %}
+                <img src="{{ url_for('uploaded_file', filename=user_profile_photo) }}" alt="Avatar" class="avatar" title="{{ user_name }}">
+            {% else %}
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='30' r='20' fill='%23fff'/%3E%3Cpath d='M10 100 Q10 70 50 70 Q90 70 90 100' fill='%23fff'/%3E%3C/svg%3E" alt="Avatar" class="avatar" title="{{ user_name }}">
+            {% endif %}
+            <span>{{ user_name }}</span>
+        </div>
+        <a href="{{ url_for('home') }}">Ana Sayfa</a>
+        <a href="{{ url_for('dashboard') }}">Profil</a>
+        <a href="{{ url_for('logout') }}">Çıkış Yap</a>
+    </nav>
+</header>
+
+<div class="search-results-container">
+    <a href="{{ url_for('home') }}" class="back-button">← Geri Dön</a>
+
+    <div class="search-header">
+        <h1>🔍 Arama Sonuçları</h1>
+        {% if search_query %}
+            <div class="search-info">
+                "<span class="search-query">{{ search_query }}</span>" için sonuçlar
+                {% if category_filter %} ({{ category_filter }} kategorisinde){% endif %}
+                - <strong>{{ topics|length }} konu bulundu</strong>
+            </div>
+        {% else %}
+            <div class="search-info">
+                {% if category_filter %}<strong>{{ category_filter }}</strong> kategorisinde <strong>{{ topics|length }} konu</strong>{% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    {% if topics %}
+        <div class="results-list">
+            {% for topic in topics %}
+                <div class="result-item">
+                    <h3 class="result-title">
+                        <a href="{{ url_for('show_topic', topic_id=topic[0]) }}">
+                            {{ topic[1] }}
+                            {% if topic|length > 10 and topic[10] == 1 %}
+                                ✅
+                            {% endif %}
+                        </a>
+                    </h3>
+                    <div class="result-meta">
+                        <span class="result-category">{{ topic[2] }}</span>
+                        <span>👤 {{ topic[4] }}</span>
+                        <span>💬 {{ topic[-1] }} cevap</span>
+                        {% if topic|length > 6 and topic[6] == 1 %}
+                            <span style="color: #ff6600;">🔒 Anonim</span>
+                        {% endif %}
+                    </div>
+                    <div class="result-content">
+                        {{ topic[3][:200] }}{% if topic[3]|length > 200 %}...{% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-results">
+            <h2>😕 Sonuç Bulunamadı</h2>
+            <p>
+                {% if search_query %}
+                    "<strong>{{ search_query }}</strong>" ile eşleşen konu bulunamadı.
+                {% else %}
+                    Bu filtrelere uygun konu bulunamadı.
+                {% endif %}
+            </p>
+            <p>
+                <a href="{{ url_for('home') }}" style="color: #6E81FF; text-decoration: underline;">Ana sayfaya dön</a>
+            </p>
+        </div>
+    {% endif %}
+</div>
+
+<footer>
+    <p>&copy; 2024 Tekkeköy Anadolu İmam Hatip Lisesi Forum. Tüm hakları saklıdır.</p>
+</footer>
+
+<script>
+    // Hamburger menüsü
+    function initMobileMenu() {
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.querySelector('.sidebar');
+        
+        if (!menuToggle) return;
+        
+        menuToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            console.log('Menu toggle clicked');
+        });
+    }
+    
+    document.addEventListener('DOMContentLoaded', initMobileMenu);
+</script>
+</body>
+</html>

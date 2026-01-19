@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Paneli - Tekkeköy Anadolu İmam Hatip Lisesi Forum</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #6E81FF 0%, #DFF7F7 100%) !important;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+        }
+
+        .admin-header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .admin-header h2 {
+            margin-top: 0;
+            color: #333;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: #ff6600;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .pending-section {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .pending-section h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #ff6600;
+            padding-bottom: 10px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .topic-review {
+            padding: 15px;
+            border: 1px solid #ff6600;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background: #fff9f3;
+        }
+
+        .topic-review:last-child {
+            margin-bottom: 0;
+        }
+
+        .review-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin: 0 0 10px 0;
+        }
+
+        .review-meta {
+            color: #666;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+
+        .review-meta strong {
+            color: #333;
+        }
+
+        .review-content {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .review-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .btn-approve {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-approve:hover {
+            background: #218838;
+        }
+
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-reject:hover {
+            background: #c82333;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-message p {
+            font-size: 16px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #333;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+
+        .back-link:hover {
+            background: #555;
+        }
+
+        .anonymous-badge {
+            display: inline-block;
+            background: #6c757d;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <button class="menu-toggle" id="menuToggle" aria-label="Menüyü Aç/Kapat">☰</button>
+    <h1>Tekkeköy Anadolu İmam Hatip Lisesi Forum</h1>
+    <nav>
+        <div class="user-info">
+            {% if user_profile_photo %}
+                <img src="{{ url_for('uploaded_file', filename=user_profile_photo) }}" alt="Avatar" class="avatar" title="{{ user_name }}">
+            {% else %}
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='30' r='20' fill='%23fff'/%3E%3Cpath d='M10 100 Q10 70 50 70 Q90 70 90 100' fill='%23fff'/%3E%3C/svg%3E" alt="Avatar" class="avatar" title="{{ user_name }}">
+            {% endif %}
+            <span>{{ user_name }}</span>
+        </div>
+        <a href="{{ url_for('home') }}">Ana Sayfa</a>
+        <a href="{{ url_for('logout') }}">Çıkış Yap</a>
+    </nav>
+</header>
+
+<main class="container">
+    <a href="{{ url_for('home') }}" class="back-link">← Ana Sayfaya Dön</a>
+
+    <!-- Admin Header -->
+    <div class="admin-header">
+        <h2>📋 Admin Paneli</h2>
+        <p style="color: #666; margin: 10px 0 0 0;">
+            Anonim ve onay beklenen konuları yönetin
+        </p>
+    </div>
+
+    <!-- Onay Beklenen Konular -->
+    <div class="pending-section">
+        <h3>
+            ⏳ Onay Beklenen Konular
+            {% if pending_topics %}
+                <span class="status-badge">{{ pending_topics|length }} Beklemede</span>
+            {% endif %}
+        </h3>
+
+        {% if pending_topics %}
+            {% for topic in pending_topics %}
+                <div class="topic-review">
+                    <!-- Başlık ve Kategori -->
+                    <h4 class="review-title">
+                        <a href="{{ url_for('show_topic', topic_id=topic[0]) }}" style="color: #0066cc; text-decoration: none;">{{ topic[1] }}</a>
+                        {% if topic[5] == 1 %}
+                            <span class="anonymous-badge">🔒 Anonim</span>
+                        {% endif %}
+                    </h4>
+
+                    <!-- Meta Bilgi -->
+                    <div class="review-meta">
+                        <p style="margin: 5px 0;">
+                            <strong>📁 Kategori:</strong> {{ topic[2] }}
+                        </p>
+                        {% if topic[5] == 0 %}
+                            <p style="margin: 5px 0;">
+                                <strong>👤 Yazarı:</strong> {{ topic[4] }}
+                            </p>
+                        {% else %}
+                            <p style="margin: 5px 0;">
+                                <strong>👤 Yazarı:</strong> <em>Anonim (Gönderen: {{ topic[4] }})</em>
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- İçerik -->
+                    <div class="review-content">
+                        {{ topic[3] }}
+                    </div>
+
+                    <!-- Aksiyonlar -->
+                    <div class="review-actions">
+                        <a href="{{ url_for('approve_topic', topic_id=topic[0], action='approve') }}" class="btn btn-approve">
+                            ✓ Onayla
+                        </a>
+                        <a href="{{ url_for('approve_topic', topic_id=topic[0], action='reject') }}" class="btn btn-reject" onclick="return confirm('Bu konuyu reddetmek istediğinize emin misiniz?')">
+                            ✕ Reddet
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-message">
+                <p>✓ Onay beklenen konu bulunmamaktadır</p>
+                <p style="font-size: 14px; color: #ccc;">Tüm konular onaylanmıştır</p>
+            </div>
+        {% endif %}
+    </div>
+</main>
+
+<script>
+// Hamburger Menü Toggle
+function initMobileMenu() {
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.querySelector('.sidebar');
+    
+    if (!menuToggle) return;
+    
+    menuToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (sidebar) sidebar.classList.toggle('open');
+        document.body.classList.toggle('menu-open');
+    });
+    
+    // Overlay'e tıklandığında menüyü kapat
+    document.addEventListener('click', function(e) {
+        const sidebarOpen = sidebar && sidebar.classList.contains('open');
+        if (sidebarOpen && 
+            (!sidebar || !sidebar.contains(e.target)) && 
+            e.target !== menuToggle) {
+            if (sidebar) sidebar.classList.remove('open');
+            document.body.classList.remove('menu-open');
+        }
+    });
+    
+    // Sidebar panellerine tıklandığında menüyü kapat
+    if (sidebar) {
+        sidebar.querySelectorAll('a, li').forEach(element => {
+            element.addEventListener('click', function() {
+                nav.classList.remove('open');
+                sidebar.classList.remove('open');
+                document.body.classList.remove('menu-open');
+            });
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initMobileMenu();
+});
+</script>
+</body>
+</html>

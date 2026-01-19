@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ viewed_user_name }} - Profil</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #6E81FF 0%, #DFF7F7 100%) !important;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+        }
+
+        .profile-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .profile-photo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #333;
+            display: block;
+            margin: 0 auto 20px;
+            background: #f0f0f0;
+        }
+
+        .profile-name {
+            font-size: 28px;
+            color: inherit;
+            margin: 10px 0;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 8px 15px;
+            background: #333;
+            color: white;
+            border-radius: 20px;
+            font-size: 13px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        .profile-info {
+            text-align: left;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #333;
+            border-radius: 4px;
+            color: inherit;
+        }
+
+        .info-item {
+            margin: 10px 0;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: inherit;
+        }
+
+        .info-value {
+            color: inherit;
+            opacity: 0.9;
+            margin-top: 5px;
+            word-break: break-word;
+        }
+
+        .profile-bio {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f0f8ff;
+            border-left: 4px solid #0066cc;
+            border-radius: 4px;
+            text-align: left;
+            line-height: 1.6;
+            color: inherit;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #333;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+
+        .back-link:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <button class="menu-toggle" id="menuToggle" aria-label="Menüyü Aç/Kapat">☰</button>
+    <h1>Tekkeköy Anadolu İmam Hatip Lisesi Forum</h1>
+    <nav>
+        <div class="user-info">
+            {% if user_profile_photo %}
+                <img src="{{ url_for('uploaded_file', filename=user_profile_photo) }}" alt="Avatar" class="avatar" title="{{ user_name }}">
+            {% else %}
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='30' r='20' fill='%23fff'/%3E%3Cpath d='M10 100 Q10 70 50 70 Q90 70 90 100' fill='%23fff'/%3E%3C/svg%3E" alt="Avatar" class="avatar" title="{{ user_name }}">
+            {% endif %}
+            <span>{{ user_name }}</span>
+        </div>
+        <a href="{{ url_for('dashboard') }}">Profil</a>
+        <a href="{{ url_for('logout') }}">Çıkış Yap</a>
+    </nav>
+</header>
+
+<main class="container">
+    <div class="profile-card" {% if viewed_user_bg_color %}style="background: {{ viewed_user_bg_color }}; color: {{ viewed_user_text_color }};"{% else %}style="color: {{ viewed_user_text_color }};"{% endif %}>
+        <!-- Profil Fotoğrafı + Çerçeve -->
+        <div style="text-align: center; margin-bottom: 20px;">
+            {% if viewed_user_profile_photo %}
+                <img src="{{ url_for('uploaded_file', filename=viewed_user_profile_photo) }}" 
+                     alt="Profil Fotoğrafı" class="profile-photo"
+                     style="border-color: {{ viewed_user_frame_color or '#333' }};">
+            {% else %}
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='30' r='20' fill='%23999'/%3E%3Cpath d='M10 100 Q10 70 50 70 Q90 70 90 100' fill='%23999'/%3E%3C/svg%3E" 
+                     alt="Profil Fotoğrafı" class="profile-photo"
+                     style="border-color: {{ viewed_user_frame_color or '#333' }};">
+            {% endif %}
+            
+            <!-- Seçili Rozet -->
+            {% if viewed_user_badge_icon %}
+                <div style="margin-top: 10px; font-size: 32px;">
+                    <img src="{{ viewed_user_badge_icon }}" alt="Rozet" style="height: 32px; vertical-align: middle;">
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- İsim -->
+        <h2 class="profile-name">{{ viewed_user_name }}</h2>
+
+        <!-- Rol Badge'i -->
+        <span class="role-badge">
+            {% if viewed_user_role == 'admin' %}
+                📌 Admin
+            {% elif viewed_user_role == 'teacher' %}
+                👨‍🏫 Öğretmen
+            {% else %}
+                👨‍🎓 Öğrenci
+            {% endif %}
+        </span>
+
+        <!-- Profil Bilgileri -->
+        <div class="profile-info" style="background: {% if '#232323' in (viewed_user_bg_color or '') or '#2A2A2A' in (viewed_user_bg_color or '') or '#333333' in (viewed_user_bg_color or '') or '#1A1A1A' in (viewed_user_bg_color or '') %}rgba(255, 255, 255, 0.1){% else %}#f9f9f9{% endif %}; border-left-color: {% if viewed_user_text_color == '#FFFFFF' %}#ffffff{% else %}#333{% endif %}; color: {{ viewed_user_text_color }};">
+            <div class="info-item">
+                <div class="info-label">📧 E-Posta:</div>
+                <div class="info-value">{{ viewed_user_email }}</div>
+            </div>
+        </div>
+
+        <!-- Biyografi -->
+        {% if viewed_user_bio %}
+            <div class="profile-bio" style="background: {% if '#232323' in (viewed_user_bg_color or '') or '#2A2A2A' in (viewed_user_bg_color or '') or '#333333' in (viewed_user_bg_color or '') or '#1A1A1A' in (viewed_user_bg_color or '') %}rgba(255, 255, 255, 0.1){% else %}#f0f8ff{% endif %}; border-left-color: {% if viewed_user_text_color == '#FFFFFF' %}#ffffff{% else %}#0066cc{% endif %}; color: {{ viewed_user_text_color }};">
+                <div class="info-label">📝 Biyografi:</div>
+                <div class="info-value">{{ viewed_user_bio }}</div>
+            </div>
+        {% else %}
+            <div class="profile-bio" style="background: {% if '#232323' in (viewed_user_bg_color or '') or '#2A2A2A' in (viewed_user_bg_color or '') or '#333333' in (viewed_user_bg_color or '') or '#1A1A1A' in (viewed_user_bg_color or '') %}rgba(255, 255, 255, 0.1){% else %}#f0f8ff{% endif %}; border-left-color: {% if viewed_user_text_color == '#FFFFFF' %}#ffffff{% else %}#0066cc{% endif %}; color: {{ viewed_user_text_color }};">
+                <div class="info-label">📝 Biyografi:</div>
+                <div class="info-value" style="color: {% if viewed_user_text_color == '#FFFFFF' %}#cccccc{% else %}#999{% endif %}; font-style: italic;">Bu kişi henüz biyografi eklememişdir.</div>
+            </div>
+        {% endif %}
+
+        <!-- Geri Butonu -->
+        <a href="{{ url_for('home') }}" class="back-link">← Ana Sayfaya Dön</a>
+    </div>
+</main>
+
+<script>
+// Hamburger Menü Toggle
+function initMobileMenu() {
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.querySelector('.sidebar');
+    
+    if (!menuToggle) return;
+    
+    menuToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (sidebar) sidebar.classList.toggle('open');
+        document.body.classList.toggle('menu-open');
+    });
+    
+    // Overlay'e tıklandığında menüyü kapat
+    document.addEventListener('click', function(e) {
+        const sidebarOpen = sidebar && sidebar.classList.contains('open');
+        if (sidebarOpen && 
+            (!sidebar || !sidebar.contains(e.target)) && 
+            e.target !== menuToggle) {
+            if (sidebar) sidebar.classList.remove('open');
+            document.body.classList.remove('menu-open');
+        }
+    });
+    
+    // Sidebar panellerine tıklandığında menüyü kapat
+    if (sidebar) {
+        sidebar.querySelectorAll('a, li').forEach(element => {
+            element.addEventListener('click', function() {
+                nav.classList.remove('open');
+                sidebar.classList.remove('open');
+                document.body.classList.remove('menu-open');
+            });
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initMobileMenu();
+});
+</script>
+</body>
+</html>

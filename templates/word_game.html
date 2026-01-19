@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Son Harf Oyunu - Forum</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #6E81FF 0%, #DFF7F7 100%) !important;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            max-width: 800px;
+            margin: 20px auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .game-header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .game-header h2 {
+            margin: 0 0 10px 0;
+            color: #333;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-rules {
+            background: #f0f8ff;
+            padding: 12px;
+            border-left: 4px solid #0066cc;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #333;
+            line-height: 1.5;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+
+        .game-area {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .messages-section {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages-section h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            border-bottom: 2px solid #6E81FF;
+            padding-bottom: 10px;
+        }
+
+        .messages-box {
+            flex: 1;
+            overflow-y: auto;
+            background: #f9f9f9;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 1px solid #e0e0e0;
+            max-height: 400px;
+        }
+
+        .message {
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            background: white;
+            border-left: 3px solid #6E81FF;
+            border-radius: 4px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .message.error {
+            background: #ffe0e0;
+            border-left-color: #dc3545;
+        }
+
+        .message.success {
+            background: #e0ffe0;
+            border-left-color: #28a745;
+        }
+
+        .message-user {
+            font-weight: bold;
+            color: #0066cc;
+            margin-bottom: 3px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+
+        .message-word {
+            font-size: 16px;
+            color: #333;
+            word-break: break-word;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 8px;
+        }
+
+        .word-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            transition: border-color 0.2s;
+        }
+
+        .word-input:focus {
+            outline: none;
+            border-color: #6E81FF;
+            box-shadow: 0 0 0 3px rgba(110, 129, 255, 0.1);
+        }
+
+        .submit-btn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #6E81FF 0%, #DFF7F7 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .stats-section {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-width: 250px;
+        }
+
+        .stat-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            border-left: 4px solid #6E81FF;
+            border-radius: 4px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+
+        .last-word {
+            padding: 12px;
+            background: linear-gradient(135deg, #6E81FF 0%, #DFF7F7 100%);
+            color: white;
+            border-radius: 6px;
+            text-align: center;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .last-word-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+
+        .last-word-text {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .game-area {
+                flex-direction: column;
+            }
+
+            .stats-section {
+                min-width: 100%;
+            }
+
+            .messages-box {
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <button class="menu-toggle" id="menuToggle" aria-label="Menüyü Aç/Kapat">☰</button>
+    <h1>Tekkeköy Anadolu İmam Hatip Lisesi Forum</h1>
+    <nav>
+        <div class="user-info">
+            {% if user_profile_photo %}
+                <img src="{{ url_for('uploaded_file', filename=user_profile_photo) }}" alt="Avatar" class="avatar" title="{{ user_name }}">
+            {% else %}
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='30' r='20' fill='%23fff'/%3E%3Cpath d='M10 100 Q10 70 50 70 Q90 70 90 100' fill='%23fff'/%3E%3C/svg%3E" alt="Avatar" class="avatar" title="{{ user_name }}">
+            {% endif %}
+            <span>{{ user_name }}</span>
+        </div>
+        <a href="{{ url_for('home') }}">Ana Sayfa</a>
+    </nav>
+</header>
+
+<main class="game-container">
+    <!-- Oyun Açıklaması -->
+    <div class="game-header">
+        <h2>🔤 Son Harf Oyunu</h2>
+        <div class="game-rules">
+            <strong>Kurallar:</strong>
+            <ul style="margin: 8px 0 0 20px; padding: 0;">
+                <li>Her kelime, bir önceki kelimenin son harfiyle başlamalı</li>
+                <li>Bir kelime sadece bir kez kullanılabilir</li>
+                <li>Geçersiz veya tekrar kelimeler engellenecektir</li>
+                <li>Türkçe harfleri (ç, ğ, ı, ö, ş, ü, ç) desteklenir</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Oyun Alanı -->
+    <div class="game-area">
+        <!-- Mesajlar Bölümü -->
+        <div class="messages-section">
+            <h3>🎮 Oyun</h3>
+            <div class="messages-box" id="messages">
+                <div style="text-align: center; color: #999; padding: 20px;">
+                    Oyunu başlatmak için bir kelime yazın...
+                </div>
+            </div>
+
+            <!-- Girdi Alanı -->
+            <div class="input-area">
+                <input 
+                    type="text" 
+                    id="wordInput" 
+                    class="word-input" 
+                    placeholder="Kelime yazın..." 
+                    autocomplete="off"
+                >
+                <button class="submit-btn" onclick="submitWord()">Gönder</button>
+            </div>
+        </div>
+
+        <!-- İstatistikler -->
+        <div class="stats-section">
+            <h3 style="margin: 0 0 15px 0; color: #333; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); border-bottom: 2px solid #6E81FF; padding-bottom: 10px;">📊 İstatistikler</h3>
+            
+            <div class="last-word" id="lastWordDisplay" style="display: none;">
+                <div class="last-word-label">Son Kelime</div>
+                <div class="last-word-text" id="lastWordText">-</div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-label">Toplam Kelime</div>
+                <div class="stat-value" id="wordCount">0</div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-label">Oyuncu Sayısı</div>
+                <div class="stat-value" id="playerCount">0</div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-label">Devam Eden Oyun</div>
+                <div style="font-size: 14px; color: #28a745; margin-top: 4px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);">🟢 Aktif</div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+const messagesBox = document.getElementById('messages');
+const wordInput = document.getElementById('wordInput');
+const wordCountEl = document.getElementById('wordCount');
+const playerCountEl = document.getElementById('playerCount');
+const lastWordDisplay = document.getElementById('lastWordDisplay');
+const lastWordText = document.getElementById('lastWordText');
+
+// Kullanıcılar ve kelimeleri izleyen set
+let players = new Set();
+let words = [];
+
+// Mesaj ekle
+function addMessage(user, word, type = 'normal', error = null) {
+    const message = document.createElement('div');
+    message.className = `message ${type}`;
+    
+    if (type === 'error') {
+        message.innerHTML = `
+            <div class="message-user">⚠️ Hata</div>
+            <div class="message-word">${error}</div>
+            <div class="message-time">${new Date().toLocaleTimeString('tr-TR')}</div>
+        `;
+    } else {
+        message.innerHTML = `
+            <div class="message-user">${user}</div>
+            <div class="message-word">${word}</div>
+            <div class="message-time">${new Date().toLocaleTimeString('tr-TR')}</div>
+        `;
+    }
+    
+    messagesBox.appendChild(message);
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+}
+
+// Sunucudan mesajları yükle
+async function loadMessages() {
+    try {
+        const response = await fetch('/api/word-game/messages');
+        const messages = await response.json();
+        
+        messagesBox.innerHTML = '';
+        players.clear();
+        words = [];
+        
+        if (messages.length === 0) {
+            messagesBox.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Oyunu başlatmak için bir kelime yazın...</div>';
+            return;
+        }
+        
+        messages.forEach(msg => {
+            addMessage(msg.user, msg.word, 'success');
+            players.add(msg.user);
+            words.push(msg.word);
+            lastWordText.textContent = msg.word;
+            lastWordDisplay.style.display = 'block';
+        });
+        
+        updateStats();
+    } catch (error) {
+        console.error('Mesajlar yüklenemedi:', error);
+    }
+}
+
+// Kelime gönder
+async function submitWord() {
+    const word = wordInput.value.trim().toLowerCase();
+    
+    if (!word) {
+        alert('Lütfen bir kelime yazın');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/word-game/submit-word', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ word: word })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            addMessage('{{ user_name }}', word, 'success');
+            players.add('{{ user_name }}');
+            words.push(word);
+            lastWordText.textContent = word;
+            lastWordDisplay.style.display = 'block';
+            wordInput.value = '';
+            wordInput.focus();
+            updateStats();
+        } else {
+            addMessage(null, null, 'error', data.error);
+        }
+    } catch (error) {
+        console.error('Hata:', error);
+        addMessage(null, null, 'error', 'Bağlantı hatası');
+    }
+}
+
+// İstatistikleri güncelle
+function updateStats() {
+    wordCountEl.textContent = words.length;
+    playerCountEl.textContent = players.size;
+}
+
+// Hamburger Menü Toggle
+function initMobileMenu() {
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.querySelector('.sidebar');
+    
+    if (!menuToggle) return;
+    
+    menuToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (sidebar) sidebar.classList.toggle('open');
+        document.body.classList.toggle('menu-open');
+    });
+    
+    // Overlay'e tıklandığında menüyü kapat
+    document.addEventListener('click', function(e) {
+        const sidebarOpen = sidebar && sidebar.classList.contains('open');
+        if (sidebarOpen && 
+            (!sidebar || !sidebar.contains(e.target)) && 
+            e.target !== menuToggle) {
+            if (sidebar) sidebar.classList.remove('open');
+            document.body.classList.remove('menu-open');
+        }
+    });
+    
+    // Sidebar panellerine tıklandığında menüyü kapat
+    if (sidebar) {
+        sidebar.querySelectorAll('a, li').forEach(element => {
+            element.addEventListener('click', function() {
+                nav.classList.remove('open');
+                sidebar.classList.remove('open');
+                document.body.classList.remove('menu-open');
+            });
+        });
+    }
+}
+
+// Enter tuşu ile gönder
+wordInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        submitWord();
+    }
+});
+
+// Sayfa yüklendiğinde
+document.addEventListener('DOMContentLoaded', function() {
+    initMobileMenu();
+    loadMessages();
+    // Her 2 saniyede mesajları yenile
+    setInterval(loadMessages, 2000);
+    wordInput.focus();
+});
+</script>
+</body>
+</html>
