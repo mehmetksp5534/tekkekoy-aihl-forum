@@ -4,6 +4,7 @@ from werkzeug.exceptions import RequestEntityTooLarge # Yeni hata yöneticisi i�
 import sqlite3
 import os
 import time
+import hashlib
 from datetime import datetime, timedelta
 
 # --- Uygulama Ayarları ---
@@ -55,44 +56,101 @@ def init_db():
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     
-    # users tablosu zaten doğru
-    c.execute('''
-     CREATE TABLE IF NOT EXISTS users (
-     id INTEGER PRIMARY KEY AUTOINCREMENT,
-     name TEXT,
-     email TEXT UNIQUE,
-     password TEXT,
-     role TEXT
-     )
-     ''')
+    # users tablosu
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            email TEXT UNIQUE,
+            password TEXT,
+            role TEXT,
+            bio TEXT,
+            profile_photo TEXT,
+            selected_frame_id INTEGER,
+            selected_badge_id INTEGER,
+            selected_background_id INTEGER,
+            xp INTEGER DEFAULT 0,
+            level INTEGER DEFAULT 1,
+            night_mode INTEGER DEFAULT 0
+        )
+    """)
     
-    # topics tablosu (attachment sütunu 6. alan, yani 0'dan başlayarak 5. indeks)
-    c.execute('''
-     CREATE TABLE IF NOT EXISTS topics (
-     id INTEGER PRIMARY KEY AUTOINCREMENT,
-     title TEXT,
-     category TEXT,
-     content TEXT,
-     author TEXT,
-     attachment TEXT
-     )
-     ''')
+    # topics tablosu (TÜM sütunlar)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS topics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            category TEXT,
+            content TEXT,
+            author TEXT,
+            solved INTEGER DEFAULT 0,
+            attachment TEXT,
+            is_anonymous INTEGER DEFAULT 0,
+            is_approved INTEGER DEFAULT 1,
+            ask_teachers INTEGER DEFAULT 0
+        )
+    """)
     
-    # replies tablosu (attachment sütunu 5. alan, yani 0'dan başlayarak 4. indeks)
-    c.execute('''
-     CREATE TABLE IF NOT EXISTS replies (
-     id INTEGER PRIMARY KEY AUTOINCREMENT,
-     topic_id INTEGER,
-     content TEXT,
-     author TEXT,
-     attachment TEXT
-     )
-     ''')
+    # replies tablosu
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS replies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            topic_id INTEGER,
+            content TEXT,
+            author TEXT,
+            attachment TEXT
+        )
+    """)
+    
+    # Diğer tablolar (rozetler, çerçeveler, arka plan renkleri)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS badges (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            icon_path TEXT,
+            description TEXT,
+            requirement INTEGER DEFAULT 0
+        )
+    """)
+    
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS frames (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            image_path TEXT,
+            description TEXT,
+            requirement INTEGER DEFAULT 0
+        )
+    """)
+    
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS background_colors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            color_code TEXT,
+            gradient_code TEXT,
+            requirement INTEGER DEFAULT 0
+        )
+    """)
+    
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS user_badges (
+            user_id INTEGER,
+            badge_id INTEGER,
+            PRIMARY KEY (user_id, badge_id)
+        )
+    """)
+    
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS user_frames (
+            user_id INTEGER,
+            frame_id INTEGER,
+            PRIMARY KEY (user_id, frame_id)
+        )
+    """)
     
     conn.commit()
     conn.close()
-
-init_db()
 
 # --- ANA SAYFA (Konu Ekleme ve Listeleme) ---
 @app.route('/', methods=['GET', 'POST'])
@@ -259,50 +317,67 @@ def search_topics():
                            category_filter=category_filter,
                            sort_by=sort_by)
 
-# --- KONUYU GÖRÜNTÜLE ---
+# --- KONUYU GÖRÜNTÜLE (DÜZELTİLMİŞ) ---
 @app.route('/topic/<int:topic_id>')
 def show_topic(topic_id):
     if 'user_name' not in session:
         return redirect(url_for('login'))
-        
+    
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
+    
+    # Topics tablosunun sütunlarını adla al
+    c.row_factory = sqlite3.Row
+    
     c.execute("SELECT * FROM topics WHERE id=?", (topic_id,))
     topic = c.fetchone()
+    
+    if topic is None:
+        conn.close()
+        return "Konu Bulunamadı", 404
+    
+    # Şimdi güvenli bir şekilde 'approved' sütununa erişebiliriz
+    # NOT: Eğer 'approved' sütunu yoksa, veritabanında oluştur
+    try:
+        is_approved = topic['approved']  # Sütun adıyla erişim
+    except (KeyError, IndexError):
+        # Eğer 'approved' sütunu yoksa, varsayılan olarak approved say
+        is_approved = 1
+    
+    # Onaylanmamış konuyu sadece admin görebilir
+    if is_approved == 0 and session.get('user_role') != 'admin':
+        conn.close()
+        return "Bu konu henüz onaya sunulmamıştır", 403
+    
+    # Cevapları al
     c.execute("SELECT * FROM replies WHERE topic_id=? ORDER BY id", (topic_id,))
     replies = c.fetchall()
     
     # Cevaplayan kişilerin profil fotoğraflarını al
     replies_with_photos = []
     for reply in replies:
-        author = reply[3]  # reply[3] = author
+        author = reply['author'] if isinstance(reply, sqlite3.Row) else reply[3]
         c.execute("SELECT profile_photo FROM users WHERE name=?", (author,))
         photo_result = c.fetchone()
         photo = photo_result[0] if photo_result else None
-        replies_with_photos.append((*reply, photo))
+        
+        # Tuple'a dönüştür ve photo ekle
+        reply_tuple = tuple(reply) if isinstance(reply, sqlite3.Row) else reply
+        replies_with_photos.append((*reply_tuple, photo))
     
-    # Kullanıcı profil fotoğrafını al (bağlantı hala açık)
+    # Kullanıcı profil fotoğrafını al
     c.execute("SELECT profile_photo FROM users WHERE id=?", (session['user_id'],))
     user_photo = c.fetchone()
     user_profile_photo = user_photo[0] if user_photo else None
     
     conn.close()
     
-    # Konu bulunamazsa
-    if topic is None:
-        return "Konu Bulunamadı", 404
-    
-    # Onaylanmamış konuyu sadece admin görebilir
-    if topic[10] == 0 and session.get('user_role') != 'admin':
-        return "Bu konu henüz onaya sunulmamıştır", 403
-        
     return render_template('topic.html',
-                           topic=topic,
-                           replies=replies_with_photos,
-                           user_name=session.get('user_name'),
-                           user_role=session.get('user_role'),
-                           user_profile_photo=user_profile_photo)
-
+                         topic=topic,
+                         replies=replies_with_photos,
+                         user_name=session.get('user_name'),
+                         user_role=session.get('user_role'),
+                         user_profile_photo=user_profile_photo)
 # --- CEVAP EKLEME ---
 @app.route('/reply/<int:topic_id>', methods=['POST'])
 def reply(topic_id):
@@ -478,13 +553,16 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email','').strip()
         password = request.form.get('password','').strip()
-
+        
+        # Şifreyi hash'le
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        
         conn = sqlite3.connect(DB_NAME)
         c = conn.cursor()
-        c.execute("SELECT * FROM users WHERE email=? AND password=?", (email, password))
+        c.execute("SELECT * FROM users WHERE email=? AND password=?", (email, hashed_password))
         user = c.fetchone()
         conn.close()
-
+        
         if user:
             session['user_id'] = user[0]
             session['user_name'] = user[1]
@@ -1182,6 +1260,8 @@ def get_user_widget(user_name):
         "frame_image": frame_image,
         "badge_icon": badge_icon
     })
+
+
 
 #if __name__ == '__main__':
     # init_db'nin ilk çalışmada çalıştığından emin olmak için buraya da koyabiliriz.
