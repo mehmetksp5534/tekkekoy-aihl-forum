@@ -545,8 +545,10 @@
                                         <div class="mini-profile-card"></div>
                                     </div>
                                 {% endif %}
-                                {% if topic|length > 8 and topic[8] %}
-                                    <span class="topic-file">| 📎 {{ topic[8].split('_', 1)[-1] }}</span>
+                                <!-- Dosya eki varsa göster -->
+                                {% if topic[6] and topic[6]|string %}
+                                {% set fname = topic[6]|string %}
+                                  <span class="topic-file">| 📎 {{ fname.split('_', 1)[-1] if '_' in fname else fname }}</span>
                                 {% endif %}
                                 {% if user_role == 'admin' and topic|length > 10 and topic[10] == 0 %}
                                     <span style="color: #ff6600; margin-left: 10px;">⏳ Onay Bekleniyor</span>

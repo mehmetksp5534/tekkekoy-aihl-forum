@@ -127,7 +127,7 @@ def setup_database():
     print("👤 Admin hesabı oluşturuluyor...")
     
     admin_name = 'Mehmet Emin Kasap'
-    admin_email = 'mekacreative@gmail.com'
+    admin_email = 'mekacreative55@gmail.com'
     admin_password = 'MeKaC55_'
     
     hashed_password = hashlib.sha256(admin_password.encode()).hexdigest()

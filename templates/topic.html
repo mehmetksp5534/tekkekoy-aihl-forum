@@ -275,27 +275,31 @@
         {{ topic[3] }}
 
         <!-- Konu Dosyası (Varsa) -->
-        {% if topic|length > 8 and topic[8] %}
-            <div class="topic-attachment">
-                <strong>📎 Ek Dosya:</strong>
-                {% set filename = topic[8] %}
-                {% set ext = filename.rsplit('.',1)[-1].lower() %}
-
-                {% if ext in ['png','jpg','jpeg','gif'] %}
-                    <p>Resim Önizlemesi:</p>
-                    <a href="{{ url_for('uploaded_file', filename=filename) }}" target="_blank">
-                        <img src="{{ url_for('uploaded_file', filename=filename) }}" 
-                             style="max-width: 100%; height: auto; max-height: 400px; border-radius: 4px; display: block;">
-                    </a>
-                {% else %}
-                    <p>
-                        <a href="{{ url_for('uploaded_file', filename=filename) }}" target="_blank" download>
-                            ⬇️ Dosyayı İndir: {{ filename }} ({{ ext | upper }})
-                        </a>
-                    </p>
-                {% endif %}
-            </div>
+{% if topic[6] %}
+    <div class="topic-attachment">
+        <strong>📎 Ek Dosya:</strong>
+        {% set filename = topic[6]|string %}
+        {% if '.' in filename %}
+            {% set ext = filename.rsplit('.',1)[-1].lower() %}
+        {% else %}
+            {% set ext = 'unknown' %}
         {% endif %}
+
+        {% if ext in ['png','jpg','jpeg','gif'] %}
+            <p>Resim Önizlemesi:</p>
+            <a href="{{ url_for('uploaded_file', filename=filename) }}" target="_blank">
+                <img src="{{ url_for('uploaded_file', filename=filename) }}" 
+                     style="max-width: 100%; height: auto; max-height: 400px; border-radius: 4px; display: block;">
+            </a>
+        {% else %}
+            <p>
+                <a href="{{ url_for('uploaded_file', filename=filename) }}" target="_blank" download>
+                    ⬇️ Dosyayı İndir: {{ filename }} ({{ ext | upper }})
+                </a>
+            </p>
+        {% endif %}
+    </div>
+{% endif %}
     </div>
 
     <!-- Cevaplar Bölümü -->
@@ -323,26 +327,30 @@
                         {{ reply[2] }}
 
                         <!-- Cevap Dosyası (Varsa) -->
-                        {% if reply|length > 5 and reply[5] %}
-                            <div class="reply-attachment">
-                                {% set filename = reply[5] %}
-                                {% set ext = filename.rsplit('.',1)[-1].lower() %}
+{% if reply|length > 4 and reply[4] %}
+    <div class="reply-attachment">
+        {% set filename = reply[4]|string %}
+        {% if '.' in filename %}
+            {% set ext = filename.rsplit('.',1)[-1].lower() %}
+        {% else %}
+            {% set ext = 'unknown' %}
+        {% endif %}
 
-                                {% if ext in ['png','jpg','jpeg','gif'] %}
-                                    <p><strong>📸 Ekli Resim:</strong></p>
-                                    <a href="{{ url_for('uploaded_file', filename=filename) }}" target="_blank">
-                                        <img src="{{ url_for('uploaded_file', filename=filename) }}" 
-                                             style="max-width: 100%; height: auto; max-height: 300px; border-radius: 4px;">
-                                    </a>
-                                {% else %}
-                                    <p>
-                                        <a href="{{ url_for('uploaded_file', filename=filename) }}" target="_blank" download>
-                                            📎 Ek Dosyayı İndir: {{ filename }}
-                                        </a>
-                                    </p>
-                                {% endif %}
-                            </div>
-                        {% endif %}
+        {% if ext in ['png','jpg','jpeg','gif'] %}
+            <p><strong>📸 Ekli Resim:</strong></p>
+            <a href="{{ url_for('uploaded_file', filename=filename) }}" target="_blank">
+                <img src="{{ url_for('uploaded_file', filename=filename) }}" 
+                     style="max-width: 100%; height: auto; max-height: 300px; border-radius: 4px;">
+            </a>
+        {% else %}
+            <p>
+                <a href="{{ url_for('uploaded_file', filename=filename) }}" target="_blank" download>
+                    📎 Ek Dosyayı İndir: {{ filename }}
+                </a>
+            </p>
+        {% endif %}
+    </div>
+{% endif %}
                     </div>
                 </div>
             {% endfor %}
